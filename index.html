@@ -1,11 +1,34 @@
 <!doctype html>
 
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <title>Lit Starter Kit</title>
-  </head>
-  <body>
-    <a href="/dev/index.html">Component Demo</a>
-  </body>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title>ING Hubs Case Study</title>
+  <script src="../node_modules/@webcomponents/webcomponentsjs/webcomponents-loader.js"></script>
+  <script src="../node_modules/lit/polyfill-support.js"></script>
+  <script type="module" src="./store.js"></script>
+  <script type="module" src="./employeeSlice.js"></script>
+  <script type="module" src="./redux-provider.js"></script>
+  <script type="module" src="./layout.js"></script>
+  <script type="module" src="./employee-list.js"></script>
+  <script type="module" src="./manage-employee.js"></script>
+  <style>
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+
+<body>
+  <my-layout></my-layout>
+</body>
+
 </html>
