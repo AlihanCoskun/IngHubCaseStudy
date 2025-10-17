@@ -1,12 +1,15 @@
 import { LitElement, html, css } from 'lit';
 import { Router } from '@vaadin/router';
+import './localization.js';
 
 class EmployeeList extends LitElement {
   static properties = {
     employees: { type: Array },
     currentPage: { type: Number },
     employeesPerPage: { type: Number },
-    totalPages: { type: Number }
+    totalPages: { type: Number },
+    viewMode: { type: String },
+    currentLanguage: { type: String }
   };
 
   static styles = css`
@@ -14,10 +17,27 @@ class EmployeeList extends LitElement {
       display: flex;
       flex-direction: column;
       flex-grow: 1;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+
+    .list-header {
+      display: flex;
+      justify-content: space-between;
+      padding: 0 4rem 0 4rem;
+      max-width: 100%;
+      box-sizing: border-box;
     }
     
     .list-title {
       color: #FE6C10;
+    }
+
+    .list-type-selection {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      align-items: center;
     }
 
     .employee-grid {
@@ -26,6 +46,7 @@ class EmployeeList extends LitElement {
       gap: 1rem;
       margin-top: 1rem;
       justify-items: center;
+      height: 100%;
     }
     
    .employee-card {
@@ -37,6 +58,7 @@ class EmployeeList extends LitElement {
       transition: transform 0.2s ease, box-shadow 0.2s ease;
       width: 100%;
       max-width: 550px;
+      max-height: 20rem;
       box-sizing: border-box;
     }
 
@@ -180,19 +202,156 @@ class EmployeeList extends LitElement {
       min-width: 2rem;
       padding: 0.5rem;
     }
+
+    .wrapper {
+      display: flex;
+      flex-direction: column;
+      max-width: 100%;
+      overflow-x: hidden;
+      height: 100%;
+    }
+
+    .content-area {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .pointer {
+      cursor: pointer
+    }
+
+    .icon-button {
+      background: inherit;
+      border: none;
+    }
+
+    /* Table View Styles */
+    .table-container {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: auto;
+      margin-top: 1rem;
+      -webkit-overflow-scrolling: touch;
+      box-sizing: border-box;
+    }
+
+    .employee-table {
+      width: 100%;
+      min-width: 800px;
+      border-collapse: collapse;
+      background: white;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .employee-table th {
+      color: #FE6C10;
+      padding: 1rem;
+      text-align: left;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .employee-table td {
+      padding: 1rem;
+      border-bottom: 1px solid #e0e0e0;
+      font-size: 0.9rem;
+    }
+
+    .employee-table tr:hover {
+      background: #f8f9fa;
+    }
+
+    .employee-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .table-checkbox {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .table-actions {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .table-action-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: 4px;
+      transition: background-color 0.2s ease;
+    }
+
+    .table-action-btn:hover {
+      background: #f0f0f0;
+    }
+
+    .table-action-btn img {
+      width: 16px;
+      height: 16px;
+    }
+
+    @media (max-width: 768px) {
+      .employee-grid { 
+        grid-template-columns: repeat(1, 1fr);
+      }
+      
+      .list-header {
+        padding: 0 1rem;
+      }
+      
+      .table-container {
+        margin-left: 0;
+        margin-right: 0;
+        padding: 0;
+      }
+      
+      .employee-table {
+        font-size: 0.8rem;
+        min-width: 600px;
+      }
+      
+      .employee-table th,
+      .employee-table td {
+        padding: 0.5rem 0.25rem;
+        white-space: nowrap;
+      }
+      
+      .employee-table th:first-child,
+      .employee-table td:first-child {
+        position: sticky;
+        left: 0;
+        background: white;
+        z-index: 1;
+      }
+    }
   `;
 
   constructor() {
     super();
     this.employees = [];
     this.currentPage = 1;
-    this.employeesPerPage = 4; // 2 per line × 2 lines
+    this.employeesPerPage = 4; // Default for grid view
     this.totalPages = 1;
+    this.viewMode = 'grid'; // 'grid' or 'table'
+    this.currentLanguage = 'en';
     this.unsubscribe = null;
+    this.langUnsubscribe = null;
   }
 
   connectedCallback() {
     super.connectedCallback();
+    this.currentLanguage = window.localizationManager.getCurrentLanguage();
+    this.langUnsubscribe = window.localizationManager.subscribe((language) => {
+      this.currentLanguage = language;
+    });
     this.loadEmployees();
     this.subscribeToStore();
   }
@@ -201,6 +360,9 @@ class EmployeeList extends LitElement {
     super.disconnectedCallback();
     if (this.unsubscribe) {
       this.unsubscribe();
+    }
+    if (this.langUnsubscribe) {
+      this.langUnsubscribe();
     }
   }
 
@@ -216,6 +378,7 @@ class EmployeeList extends LitElement {
     if (window.__REDUX_STORE__) {
       const state = window.__REDUX_STORE__.getState();
       this.employees = state.employees || [];
+      this.employeesPerPage = this.getEmployeesPerPage();
       this.calculateTotalPages();
     }
   }
@@ -284,7 +447,7 @@ class EmployeeList extends LitElement {
   }
 
   deleteEmployee(id) {
-    if (confirm('Are you sure you want to delete this employee?')) {
+    if (confirm(window.localizationManager.translate('confirmDelete'))) {
       if (window.__REDUX_STORE__) {
         window.__REDUX_STORE__.dispatch({
           type: 'DELETE_EMPLOYEE',
@@ -294,63 +457,148 @@ class EmployeeList extends LitElement {
     }
   }
 
+  getEmployeesPerPage() {
+    return this.viewMode === 'table' ? 9 : 4;
+  }
+
+  toggleViewMode(mode) {
+    this.viewMode = mode;
+    this.employeesPerPage = this.getEmployeesPerPage();
+    this.calculateTotalPages();
+    // Reset to page 1 when switching views
+    this.currentPage = 1;
+  }
+
+  handleSelectAll(e) {
+    const isChecked = e.target.checked;
+    const checkboxes = this.shadowRoot.querySelectorAll('.employee-checkbox');
+    checkboxes.forEach(checkbox => {
+      checkbox.checked = isChecked;
+    });
+  }
+
+  handleEmployeeCheckbox() {
+    // For now, this doesn't do anything as requested
+    // In the future, this could be used to track selected employees
+  }
+
   render() {
     const currentPageEmployees = this.getCurrentPageEmployees();
     const pageNumbers = this.getPageNumbers();
     
     return html`
-      <h2 class="list-title">Employee List</h2>
-      
-      <div class="employee-grid">
-        ${currentPageEmployees.map(employee => html`
-          <div class="employee-card">
-            <div class="employee-info">
-              <div class="info-item">
-                <span class="info-label">First Name:</span>
-                <span class="info-value" title="${employee.firstName}">${employee.firstName}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Last Name:</span>
-                <span class="info-value" title="${employee.lastName}">${employee.lastName}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Date of Employment:</span>
-                <span class="info-value" title="${employee.dateOfEmployment}">${employee.dateOfEmployment}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Date of Birth:</span>
-                <span class="info-value" title="${employee.dateOfBirth}">${employee.dateOfBirth}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Phone:</span>
-                <span class="info-value" title="${employee.phoneNumber}">${employee.phoneNumber}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Email:</span>
-                <span class="info-value" title="${employee.emailAddress}">${employee.emailAddress}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Department:</span>
-                <span class="info-value" title="${employee.department}">${employee.department}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Position:</span>
-                <span class="info-value" title="${employee.position}">${employee.position}</span>
-              </div>
-            </div>
-            
-            <div class="card-actions">
-              <button class="action-btn edit-btn" @click="${() => this.editEmployee(employee.id)}">
-                <span class="icon">✏️</span>
-                Edit
-              </button>
-              <button class="action-btn delete-btn" @click="${() => this.deleteEmployee(employee.id)}">
-                <span class="icon">🗑️</span>
-                Delete
-              </button>
-            </div>
+    <div class="wrapper">
+      <div class="content-area">
+        <div class="list-header">
+          <h2 class="list-title">${window.localizationManager.translate('employeeList')}</h2>
+          <div class="list-type-selection">
+            <button class="icon-button" @click="${() => this.toggleViewMode('table')}">
+              <img class="pointer" src="icons/bars.svg" alt="table-view" width="24px" height="24px">
+            </button>
+            <button class="icon-button" @click="${() => this.toggleViewMode('grid')}">
+              <img class="pointer" src="icons/grid.svg" alt="grid-view" width="24px" height="24px">
+            </button>
           </div>
-        `)}
+        </div>
+     
+      
+      ${this.viewMode === 'table' ? html`
+        <div class="table-container">
+          <table class="employee-table">
+            <thead>
+              <tr>
+                <th><input type="checkbox" class="table-checkbox" @change="${this.handleSelectAll}"></th>
+                <th>${window.localizationManager.translate('firstName')}</th>
+                <th>${window.localizationManager.translate('lastName')}</th>
+                <th>${window.localizationManager.translate('dateOfEmployment')}</th>
+                <th>${window.localizationManager.translate('dateOfBirth')}</th>
+                <th>${window.localizationManager.translate('phone')}</th>
+                <th>${window.localizationManager.translate('email')}</th>
+                <th>${window.localizationManager.translate('department')}</th>
+                <th>${window.localizationManager.translate('position')}</th>
+                <th>${window.localizationManager.translate('actions')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${currentPageEmployees.map(employee => html`
+                <tr>
+                  <td><input type="checkbox" class="table-checkbox employee-checkbox" @change="${this.handleEmployeeCheckbox}"></td>
+                  <td>${employee.firstName}</td>
+                  <td>${employee.lastName}</td>
+                  <td>${employee.dateOfEmployment}</td>
+                  <td>${employee.dateOfBirth}</td>
+                  <td>${employee.phoneNumber}</td>
+                  <td>${employee.emailAddress}</td>
+                  <td>${employee.department}</td>
+                  <td>${employee.position}</td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="table-action-btn" @click="${() => this.editEmployee(employee.id)}" title="Edit">
+                        <img src="icons/edit.svg" alt="Edit">
+                      </button>
+                      <button class="table-action-btn" @click="${() => this.deleteEmployee(employee.id)}" title="Delete">
+                        <img src="icons/delete.svg" alt="Delete">
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              `)}
+            </tbody>
+          </table>
+        </div>
+      ` : html`
+        <div class="employee-grid">
+          ${currentPageEmployees.map(employee => html`
+            <div class="employee-card">
+              <div class="employee-info">
+                <div class="info-item">
+                  <span class="info-label">${window.localizationManager.translate('firstName')}:</span>
+                  <span class="info-value" title="${employee.firstName}">${employee.firstName}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">${window.localizationManager.translate('lastName')}:</span>
+                  <span class="info-value" title="${employee.lastName}">${employee.lastName}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">${window.localizationManager.translate('dateOfEmployment')}:</span>
+                  <span class="info-value" title="${employee.dateOfEmployment}">${employee.dateOfEmployment}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">${window.localizationManager.translate('dateOfBirth')}:</span>
+                  <span class="info-value" title="${employee.dateOfBirth}">${employee.dateOfBirth}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">${window.localizationManager.translate('phone')}:</span>
+                  <span class="info-value" title="${employee.phoneNumber}">${employee.phoneNumber}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">${window.localizationManager.translate('email')}:</span>
+                  <span class="info-value" title="${employee.emailAddress}">${employee.emailAddress}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">${window.localizationManager.translate('department')}:</span>
+                  <span class="info-value" title="${employee.department}">${employee.department}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">${window.localizationManager.translate('position')}:</span>
+                  <span class="info-value" title="${employee.position}">${employee.position}</span>
+                </div>
+              </div>
+              
+              <div class="card-actions">
+                <button class="action-btn edit-btn" @click="${() => this.editEmployee(employee.id)}">
+                  <span class="icon">✏️</span>
+                  ${window.localizationManager.translate('edit')}
+                </button>
+                <button class="action-btn delete-btn" @click="${() => this.deleteEmployee(employee.id)}">
+                  <span class="icon">🗑️</span>
+                  ${window.localizationManager.translate('delete')}
+                </button>
+              </div>
+            </div>
+          `)}
+        </div>
+      `}
       </div>
       
       ${this.totalPages > 1 ? html`
@@ -359,7 +607,7 @@ class EmployeeList extends LitElement {
             @click="${this.goToPreviousPage}" 
             ?disabled="${this.currentPage === 1}"
           >
-            Previous
+            ${window.localizationManager.translate('previous')}
           </button>
           
           <div class="page-numbers">
@@ -377,14 +625,16 @@ class EmployeeList extends LitElement {
             @click="${this.goToNextPage}" 
             ?disabled="${this.currentPage === this.totalPages}"
           >
-            Next
+            ${window.localizationManager.translate('next')}
           </button>
           
           <div class="pagination-info">
-            Page ${this.currentPage} of ${this.totalPages}
+            ${window.localizationManager.translate('page')} ${this.currentPage} ${window.localizationManager.translate('of')} ${this.totalPages}
           </div>
         </div>
       ` : ''}
+    </div>
+  
     `;
   }
 }

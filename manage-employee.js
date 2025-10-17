@@ -1,5 +1,6 @@
 import { LitElement, html, css } from 'lit';
 import { Router } from '@vaadin/router';
+import './localization.js';
 
 class ManageEmployee extends LitElement {
   static properties = {
@@ -7,7 +8,8 @@ class ManageEmployee extends LitElement {
     employee: { type: Object },
     isNew: { type: Boolean },
     formErrors: { type: Object },
-    isFormValid: { type: Boolean }
+    isFormValid: { type: Boolean },
+    currentLanguage: { type: String }
   };
 
   static styles = css`
@@ -142,8 +144,7 @@ class ManageEmployee extends LitElement {
 
     @media (max-width: 768px) {
       .form-grid {
-       justify-content:center;
-       background: yellow;
+       display: block;
       }
       
     }
@@ -155,12 +156,18 @@ class ManageEmployee extends LitElement {
     this.employee = null;
     this.isNew = false;
     this.unsubscribe = null;
+    this.langUnsubscribe = null;
     this.formErrors = {};
     this.isFormValid = false;
+    this.currentLanguage = 'en';
   }
 
   connectedCallback() {
     super.connectedCallback();
+    this.currentLanguage = window.localizationManager.getCurrentLanguage();
+    this.langUnsubscribe = window.localizationManager.subscribe((language) => {
+      this.currentLanguage = language;
+    });
     this.loadEmployee();
     this.subscribeToStore();
   }
@@ -169,6 +176,9 @@ class ManageEmployee extends LitElement {
     super.disconnectedCallback();
     if (this.unsubscribe) {
       this.unsubscribe();
+    }
+    if (this.langUnsubscribe) {
+      this.langUnsubscribe();
     }
   }
 
@@ -223,6 +233,14 @@ class ManageEmployee extends LitElement {
     this.validateField(field, value);
   }
 
+  handlePhoneInputChange(e) {
+    const value = e.target.value;
+    // Only allow +, (, ), spaces, and digits 0-9
+    const filteredValue = value.replace(/[^+\s()0-9]/g, '');
+    this.employee = { ...this.employee, phoneNumber: filteredValue };
+    this.validateField('phoneNumber', filteredValue);
+  }
+
   handleDateChange(e) {
     const field = e.target.name;
     const value = e.target.value;
@@ -253,26 +271,49 @@ class ManageEmployee extends LitElement {
     
     switch (field) {
       case 'firstName':
-      case 'lastName':
         if (!value || value.trim().length < 2) {
-          errors[field] = `${field === 'firstName' ? 'First' : 'Last'} name must be at least 2 characters`;
+          errors[field] = window.localizationManager.translate('firstNameRequired');
         } else {
           delete errors[field];
         }
         break;
         
-      case 'emailAddress':
+      case 'lastName':
+        if (!value || value.trim().length < 2) {
+          errors[field] = window.localizationManager.translate('lastNameRequired');
+        } else {
+          delete errors[field];
+        }
+        break;
+        
+      case 'emailAddress': {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!value || !emailRegex.test(value)) {
-          errors.emailAddress = 'Please enter a valid email address';
+          errors.emailAddress = window.localizationManager.translate('validEmailRequired');
         } else {
           delete errors.emailAddress;
         }
         break;
+      }
+        
+      case 'phoneNumber': {
+        // Phone number validation: allows +, (, ), spaces, and digits 0-9
+        // Examples: +(90) 536850824, 05368508524, 5368508524, 0536 850 8524
+        const phoneRegex = /^[+]?[()\s\d]+$/;
+        const hasDigits = /\d/.test(value);
+        const minLength = 7; // Minimum reasonable phone number length
+        
+        if (!value || !phoneRegex.test(value) || !hasDigits || value.replace(/[\s()+]/g, '').length < minLength) {
+          errors.phoneNumber = window.localizationManager.translate('validPhoneRequired');
+        } else {
+          delete errors.phoneNumber;
+        }
+        break;
+      }
         
       default:
         if (!value || value.trim() === '') {
-          errors[field] = 'This field is required';
+          errors[field] = window.localizationManager.translate('fieldRequired');
         } else {
           delete errors[field];
         }
@@ -314,7 +355,7 @@ class ManageEmployee extends LitElement {
 
   handleDelete() {
     if (window.__REDUX_STORE__ && !this.isNew) {
-      if (confirm('Are you sure you want to delete this employee?')) {
+      if (confirm(window.localizationManager.translate('confirmDelete'))) {
         window.__REDUX_STORE__.dispatch({
           type: 'DELETE_EMPLOYEE',
           payload: this.employee.id
@@ -334,13 +375,13 @@ class ManageEmployee extends LitElement {
     if (!this.employee && !this.isNew) {
       return html`
         <div class="page-wrapper">
-          <a href="/" class="back-link">← Back to Employee List</a>
+          <a href="/" class="back-link">${window.localizationManager.translate('backToEmployeeListLink')}</a>
           <div class="form-container">
-            <h2>Employee not found</h2>
-            <p>The employee you're looking for doesn't exist.</p>
+            <h2>${window.localizationManager.translate('employeeNotFound')}</h2>
+            <p>${window.localizationManager.translate('employeeNotFoundMessage')}</p>
             <div class="btn-group">
               <button class="btn-secondary" @click="${this.navigateToHome}">
-                Back to Employee List
+                ${window.localizationManager.translate('backToEmployeeList')}
               </button>
             </div>
           </div>
@@ -349,11 +390,11 @@ class ManageEmployee extends LitElement {
     }
 
     return html`
-        <h2 class="list-title">${this.isNew ? 'Add New Employee' : 'Edit Employee'}</h2>
+        <h2 class="list-title">${this.isNew ? window.localizationManager.translate('addNewEmployee') : window.localizationManager.translate('editEmployee')}</h2>
         <div class="form-container">
           <div class="form-grid">
             <div class="form-group">
-              <label for="firstName">First Name:</label>
+              <label for="firstName">${window.localizationManager.translate('firstNameLabel')}</label>
               <input 
                 type="text" 
                 id="firstName" 
@@ -367,7 +408,7 @@ class ManageEmployee extends LitElement {
             </div>
             
             <div class="form-group">
-              <label for="lastName">Last Name:</label>
+              <label for="lastName">${window.localizationManager.translate('lastNameLabel')}</label>
               <input 
                 type="text" 
                 id="lastName" 
@@ -381,7 +422,7 @@ class ManageEmployee extends LitElement {
             </div>
             
             <div class="form-group">
-              <label for="dateOfEmployment">Date of Employment:</label>
+              <label for="dateOfEmployment">${window.localizationManager.translate('dateOfEmploymentLabel')}</label>
               <input 
                 type="date" 
                 id="dateOfEmployment" 
@@ -395,7 +436,7 @@ class ManageEmployee extends LitElement {
             </div>
             
             <div class="form-group">
-              <label for="dateOfBirth">Date of Birth:</label>
+              <label for="dateOfBirth">${window.localizationManager.translate('dateOfBirthLabel')}</label>
               <input 
                 type="date" 
                 id="dateOfBirth" 
@@ -409,13 +450,13 @@ class ManageEmployee extends LitElement {
             </div>
             
             <div class="form-group">
-              <label for="phoneNumber">Phone Number:</label>
+              <label for="phoneNumber">${window.localizationManager.translate('phoneNumberLabel')}</label>
               <input 
                 type="tel" 
                 id="phoneNumber" 
                 name="phoneNumber" 
                 .value="${this.employee.phoneNumber}"
-                @input="${this.handleInputChange}"
+                @input="${this.handlePhoneInputChange}"
                 class="${this.formErrors.phoneNumber ? 'error' : ''}"
                 required
               >
@@ -423,7 +464,7 @@ class ManageEmployee extends LitElement {
             </div>
             
             <div class="form-group">
-              <label for="emailAddress">Email Address:</label>
+              <label for="emailAddress">${window.localizationManager.translate('emailAddressLabel')}</label>
               <input 
                 type="email" 
                 id="emailAddress" 
@@ -437,7 +478,7 @@ class ManageEmployee extends LitElement {
             </div>
             
             <div class="form-group">
-              <label for="department">Department:</label>
+              <label for="department">${window.localizationManager.translate('departmentLabel')}</label>
               <select 
                 id="department" 
                 name="department" 
@@ -446,15 +487,15 @@ class ManageEmployee extends LitElement {
                 class="${this.formErrors.department ? 'error' : ''}"
                 required
               >
-                <option value="">Select Department</option>
-                <option value="Analytics">Analytics</option>
-                <option value="Tech">Tech</option>
+                <option value="">${window.localizationManager.translate('selectDepartment')}</option>
+                <option value="Analytics">${window.localizationManager.translate('analytics')}</option>
+                <option value="Tech">${window.localizationManager.translate('tech')}</option>
               </select>
               ${this.formErrors.department ? html`<div class="error-message">${this.formErrors.department}</div>` : ''}
             </div>
             
             <div class="form-group">
-              <label for="position">Position:</label>
+              <label for="position">${window.localizationManager.translate('positionLabel')}</label>
               <select 
                 id="position" 
                 name="position" 
@@ -463,21 +504,21 @@ class ManageEmployee extends LitElement {
                 class="${this.formErrors.position ? 'error' : ''}"
                 required
               >
-                <option value="">Select Position</option>
-                <option value="Junior">Junior</option>
-                <option value="Medior">Medior</option>
-                <option value="Senior">Senior</option>
+                <option value="">${window.localizationManager.translate('selectPosition')}</option>
+                <option value="Junior">${window.localizationManager.translate('junior')}</option>
+                <option value="Medior">${window.localizationManager.translate('medior')}</option>
+                <option value="Senior">${window.localizationManager.translate('senior')}</option>
               </select>
               ${this.formErrors.position ? html`<div class="error-message">${this.formErrors.position}</div>` : ''}
             </div>
           </div>
           <div class="btn-group">
           <button class="btn-primary" @click="${this.handleSave}" ?disabled="${!this.isFormValid}">
-            Save
+            ${window.localizationManager.translate('save')}
           </button>
           
           <button class="btn-secondary" @click="${this.navigateToHome}">
-            Cancel
+            ${window.localizationManager.translate('cancel')}
           </button>
         </div>
         </div>

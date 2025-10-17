@@ -1,9 +1,14 @@
 import { LitElement, html, css } from 'lit';
 import { Router } from '@vaadin/router';
 import './redux-provider.js';
+import './localization.js';
 
 class MyLayout extends LitElement {
- static styles = css`
+  static properties = {
+    currentLanguage: { type: String }
+  };
+
+  static styles = css`
   :host {
     display: block;
     height: 100vh;
@@ -30,13 +35,52 @@ class MyLayout extends LitElement {
 
   .add-employee-btn {
   color: #FE6C10;
-  padding: 0.75rem 1.5rem;
+  padding: 0.75rem 0.5rem;
   border: none;
   cursor: pointer;
   text-decoration: none;
  }
+
+  .header-tools {
+    display:flex;
+    gap: 0.5rem;
+    justify-content: space-evenly;
+    align-items: center;
+  }
+
+  .header-item {
+    display:flex;
+    gap: 0.2rem;
+    align-items: center;
+  }
+
+  .pointer {
+      cursor: pointer
+  }
+
 `;
 
+
+  constructor() {
+    super();
+    this.currentLanguage = 'en';
+    this.unsubscribe = null;
+  }
+
+  connectedCallback() {
+    super.connectedCallback();
+    this.currentLanguage = window.localizationManager.getCurrentLanguage();
+    this.unsubscribe = window.localizationManager.subscribe((language) => {
+      this.currentLanguage = language;
+    });
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    if (this.unsubscribe) {
+      this.unsubscribe();
+    }
+  }
 
   firstUpdated() {
     const outlet = this.renderRoot.querySelector('main');
@@ -65,12 +109,40 @@ class MyLayout extends LitElement {
 
   }
 
+  navigateToHome() {
+   Router.go("/");
+  }
+
+  navigateToNew() {
+   Router.go("/user/new");
+  }
+
+  toggleLanguage() {
+    const newLanguage = window.localizationManager.toggleLanguage();
+    this.currentLanguage = newLanguage;
+  }
+
   render() {
+    const flagIcon = this.currentLanguage === 'en' ? 'icons/turkish-flag.svg' : 'icons/uk-flag.svg';
+    const flagAlt = this.currentLanguage === 'en' ? 'Turkish flag' : 'UK flag';
+    
     return html`
       <redux-provider>
         <header>
-          <p>My App Header</p>
-           <a href="/user/new" class="add-employee-btn">Add New Employee</a>
+          <img src="icons/ing-logo.svg" class="pointer" alt="company-logo" width="80px" height="64px" @click="${this.navigateToHome}">
+          <div class="header-tools">
+            <div class="header-item pointer" @click="${this.navigateToHome}">
+              <img src="icons/users.svg" alt="employees" width="24px" height="24px">
+              <span class="add-employee-btn">${window.localizationManager.translate('employees')}</span>
+            </div>
+            <div class="header-item pointer" @click="${this.navigateToNew}">
+              <img src="icons/plus.svg" alt="add-icon" width="24px" height="24px">
+              <span href="/user/new" class="add-employee-btn">${window.localizationManager.translate('addNew')}</span>
+            </div>
+            <div class="header-item pointer" @click="${this.toggleLanguage}">
+              <img src="${flagIcon}" alt="${flagAlt}" width="32px" height="32px">
+            </div>
+          </div>
         </header>
         <main></main>
       </redux-provider>
