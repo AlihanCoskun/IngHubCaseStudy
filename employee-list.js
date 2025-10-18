@@ -338,9 +338,9 @@ class EmployeeList extends LitElement {
     super();
     this.employees = [];
     this.currentPage = 1;
-    this.employeesPerPage = 4; // Default for grid view
+    this.employeesPerPage = 4;
     this.totalPages = 1;
-    this.viewMode = 'grid'; // 'grid' or 'table'
+    this.viewMode = 'grid';
     this.currentLanguage = 'en';
     this.unsubscribe = null;
     this.langUnsubscribe = null;
@@ -385,7 +385,6 @@ class EmployeeList extends LitElement {
 
   calculateTotalPages() {
     this.totalPages = Math.ceil(this.employees.length / this.employeesPerPage);
-    // Reset to page 1 if current page is beyond total pages
     if (this.currentPage > this.totalPages && this.totalPages > 0) {
       this.currentPage = 1;
     }
@@ -425,11 +424,9 @@ class EmployeeList extends LitElement {
         pages.push(i);
       }
     } else {
-      // Show pages around current page
       let start = Math.max(1, this.currentPage - 2);
       let end = Math.min(this.totalPages, start + maxVisiblePages - 1);
       
-      // Adjust start if we're near the end
       if (end - start < maxVisiblePages - 1) {
         start = Math.max(1, end - maxVisiblePages + 1);
       }
@@ -478,8 +475,7 @@ class EmployeeList extends LitElement {
   }
 
   handleEmployeeCheckbox() {
-    // For now, this doesn't do anything as requested
-    // In the future, this could be used to track selected employees
+    // NOOP //
   }
 
   render() {

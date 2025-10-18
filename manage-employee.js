@@ -220,7 +220,6 @@ class ManageEmployee extends LitElement {
       this.employee = null;
     }
     
-    // Validate existing employee data
     if (this.employee) {
       this.validateForm();
     }
@@ -298,7 +297,6 @@ class ManageEmployee extends LitElement {
         
       case 'phoneNumber': {
         // Phone number validation: allows +, (, ), spaces, and digits 0-9
-        // Examples: +(90) 536850824, 05368508524, 5368508524, 0536 850 8524
         const phoneRegex = /^[+]?[()\s\d]+$/;
         const hasDigits = /\d/.test(value);
         const minLength = 7; // Minimum reasonable phone number length
@@ -348,24 +346,22 @@ class ManageEmployee extends LitElement {
         });
       }
       
-      // Navigate back to employee list using router
       this.navigateToHome();
     }
   }
 
-  handleDelete() {
-    if (window.__REDUX_STORE__ && !this.isNew) {
-      if (confirm(window.localizationManager.translate('confirmDelete'))) {
-        window.__REDUX_STORE__.dispatch({
-          type: 'DELETE_EMPLOYEE',
-          payload: this.employee.id
-        });
-        
-        // Navigate back to employee list using router
-        this.navigateToHome();
-      }
-    }
-  }
+  // Delete functionality is not being used in this page but can be used in the future
+  // handleDelete() {
+  //   if (window.__REDUX_STORE__ && !this.isNew) {
+  //     if (confirm(window.localizationManager.translate('confirmDelete'))) {
+  //       window.__REDUX_STORE__.dispatch({
+  //         type: 'DELETE_EMPLOYEE',
+  //         payload: this.employee.id
+  //       });
+  //       this.navigateToHome();
+  //     }
+  //   }
+  // }
 
   navigateToHome() {
    Router.go("/");
