@@ -178,53 +178,63 @@ suite('employee-list', () => {
     assert.equal(editId, 1);
   });
 
-  test('delete button calls deleteEmployee with correct id', async () => {
+  test('delete button shows delete dialog', async () => {
     const el = await fixture(html`<employee-list></employee-list>`);
     await waitForUpdate(el);
     
-    // Mock confirm to return true
-    const originalConfirm = window.confirm;
-    window.confirm = () => true;
+    const deleteButton = el.shadowRoot.querySelector('.delete-btn');
+    assert.isNotNull(deleteButton);
     
-    try {
-      let deleteCalled = false;
-      let deleteId = null;
-      el.deleteEmployee = (id) => {
-        deleteCalled = true;
-        deleteId = id;
-      };
-      
-      const deleteButton = el.shadowRoot.querySelector('.delete-btn');
-      assert.isNotNull(deleteButton);
-      
-      deleteButton.click();
-      
-      assert.isTrue(deleteCalled);
-      assert.equal(deleteId, 1);
-    } finally {
-      window.confirm = originalConfirm;
-    }
+    deleteButton.click();
+    await waitForUpdate(el);
+    
+    // Check that dialog is shown
+    assert.isTrue(el.showDeleteDialog);
+    assert.isNotNull(el.employeeToDelete);
+    assert.equal(el.employeeToDelete.id, 1);
+    
+    // Check that dialog is rendered
+    const dialog = el.shadowRoot.querySelector('.dialog-overlay');
+    assert.isNotNull(dialog);
   });
 
   test('delete employee removes from store', async () => {
     const el = await fixture(html`<employee-list></employee-list>`);
     await waitForUpdate(el);
     
-    // Mock confirm to return true
-    const originalConfirm = window.confirm;
-    window.confirm = () => true;
+    // Show delete dialog
+    el.deleteEmployee(1);
+    await waitForUpdate(el);
     
-    try {
-      const deleteButton = el.shadowRoot.querySelector('.delete-btn');
-      deleteButton.click();
-      await waitForUpdate(el);
-      
-      // Employee should be removed from store and component
-      assert.equal(el.employees.length, 1);
-      assert.equal(el.employees[0].id, 2);
-    } finally {
-      window.confirm = originalConfirm;
-    }
+    // Confirm delete
+    el.confirmDelete();
+    await waitForUpdate(el);
+    
+    // Employee should be removed from store and component
+    assert.equal(el.employees.length, 1);
+    assert.equal(el.employees[0].id, 2);
+    
+    // Dialog should be closed
+    assert.isFalse(el.showDeleteDialog);
+    assert.isNull(el.employeeToDelete);
+  });
+
+  test('delete dialog can be closed', async () => {
+    const el = await fixture(html`<employee-list></employee-list>`);
+    await waitForUpdate(el);
+    
+    // Show delete dialog
+    el.deleteEmployee(1);
+    await waitForUpdate(el);
+    
+    assert.isTrue(el.showDeleteDialog);
+    
+    // Close dialog
+    el.closeDeleteDialog();
+    await waitForUpdate(el);
+    
+    assert.isFalse(el.showDeleteDialog);
+    assert.isNull(el.employeeToDelete);
   });
 
   test('view mode toggle updates employees per page', async () => {

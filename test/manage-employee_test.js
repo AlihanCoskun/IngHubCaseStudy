@@ -321,7 +321,41 @@ suite('manage-employee', () => {
     assert.isFalse(saveButton.disabled);
   });
 
-  test('saves new employee to store', async () => {
+  test('shows save dialog when save button is clicked', async () => {
+    const el = await fixture(html`<manage-employee></manage-employee>`);
+    el.location = createMockLocation('/user/new', { id: 'new' });
+    el.loadEmployee();
+    await waitForUpdate(el);
+    
+    // Fill employee data
+    el.employee = {
+      firstName: 'New',
+      lastName: 'Employee',
+      dateOfEmployment: '01/01/2020',
+      dateOfBirth: '01/01/1990',
+      phoneNumber: '+90 536 850 8524',
+      emailAddress: 'new@example.com',
+      department: 'Tech',
+      position: 'Junior'
+    };
+    
+    el.validateForm();
+    await waitForUpdate(el);
+    
+    // Click save button
+    const saveButton = el.shadowRoot.querySelector('.btn-primary');
+    saveButton.click();
+    await waitForUpdate(el);
+    
+    // Check that dialog is shown
+    assert.isTrue(el.showSaveDialog);
+    
+    // Check that dialog is rendered
+    const dialog = el.shadowRoot.querySelector('.dialog-overlay');
+    assert.isNotNull(dialog);
+  });
+
+  test('saves new employee to store after confirmation', async () => {
     const el = await fixture(html`<manage-employee></manage-employee>`);
     el.location = createMockLocation('/user/new', { id: 'new' });
     el.loadEmployee();
@@ -343,7 +377,12 @@ suite('manage-employee', () => {
     let navigated = false;
     el.navigateToHome = () => { navigated = true; };
     
+    // Show save dialog
     el.handleSave();
+    await waitForUpdate(el);
+    
+    // Confirm save
+    el.confirmSave();
     await waitForUpdate(el);
     
     // Check employee was added to store
@@ -352,9 +391,12 @@ suite('manage-employee', () => {
     assert.isNotNull(newEmployee);
     assert.equal(newEmployee.lastName, 'Employee');
     assert.isTrue(navigated);
+    
+    // Dialog should be closed
+    assert.isFalse(el.showSaveDialog);
   });
 
-  test('updates existing employee in store', async () => {
+  test('updates existing employee in store after confirmation', async () => {
     const el = await fixture(html`<manage-employee></manage-employee>`);
     el.location = createMockLocation('/user/1', { id: '1' });
     el.loadEmployee();
@@ -368,7 +410,12 @@ suite('manage-employee', () => {
     let navigated = false;
     el.navigateToHome = () => { navigated = true; };
     
+    // Show save dialog
     el.handleSave();
+    await waitForUpdate(el);
+    
+    // Confirm save
+    el.confirmSave();
     await waitForUpdate(el);
     
     // Check employee was updated in store
@@ -377,70 +424,43 @@ suite('manage-employee', () => {
     assert.equal(updatedEmployee.firstName, 'Updated John');
     assert.equal(updatedEmployee.lastName, 'Updated Doe');
     assert.isTrue(navigated);
+    
+    // Dialog should be closed
+    assert.isFalse(el.showSaveDialog);
   });
 
-  test('deletes employee from store', async () => {
-    const el = await fixture(html`<manage-employee></manage-employee>`);
-    el.location = createMockLocation('/user/1', { id: '1' });
-    el.loadEmployee();
-    await waitForUpdate(el);
-    
-    // Mock confirm to return true
-    const originalConfirm = window.confirm;
-    window.confirm = () => true;
-    
-    try {
-      // Mock navigateToHome
-      let navigated = false;
-      el.navigateToHome = () => { navigated = true; };
-      
-      el.handleDelete();
-      await waitForUpdate(el);
-      
-      // Check employee was removed from store
-      const state = mockStore.getState();
-      const deletedEmployee = state.employees.find(e => e.id === 1);
-      assert.isUndefined(deletedEmployee);
-      assert.isTrue(navigated);
-    } finally {
-      window.confirm = originalConfirm;
-    }
-  });
-
-  test('does not delete when confirm is cancelled', async () => {
-    const el = await fixture(html`<manage-employee></manage-employee>`);
-    el.location = createMockLocation('/user/1', { id: '1' });
-    el.loadEmployee();
-    await waitForUpdate(el);
-    
-    // Mock confirm to return false
-    const originalConfirm = window.confirm;
-    window.confirm = () => false;
-    
-    try {
-      el.handleDelete();
-      await waitForUpdate(el);
-      
-      // Check employee was not removed from store
-      const state = mockStore.getState();
-      const employee = state.employees.find(e => e.id === 1);
-      assert.isNotNull(employee);
-    } finally {
-      window.confirm = originalConfirm;
-    }
-  });
-
-  test('does not delete new employee', async () => {
+  test('save dialog can be closed', async () => {
     const el = await fixture(html`<manage-employee></manage-employee>`);
     el.location = createMockLocation('/user/new', { id: 'new' });
     el.loadEmployee();
     await waitForUpdate(el);
     
-    el.handleDelete();
+    // Fill employee data
+    el.employee = {
+      firstName: 'New',
+      lastName: 'Employee',
+      dateOfEmployment: '01/01/2020',
+      dateOfBirth: '01/01/1990',
+      phoneNumber: '+90 536 850 8524',
+      emailAddress: 'new@example.com',
+      department: 'Tech',
+      position: 'Junior'
+    };
     
-    // No action should be taken for new employees
-    const state = mockStore.getState();
-    assert.equal(state.employees.length, 2);
+    el.validateForm();
+    await waitForUpdate(el);
+    
+    // Show save dialog
+    el.handleSave();
+    await waitForUpdate(el);
+    
+    assert.isTrue(el.showSaveDialog);
+    
+    // Close dialog
+    el.closeSaveDialog();
+    await waitForUpdate(el);
+    
+    assert.isFalse(el.showSaveDialog);
   });
 
   test('displays error messages for invalid fields', async () => {

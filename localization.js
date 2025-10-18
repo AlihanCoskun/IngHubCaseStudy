@@ -30,6 +30,18 @@ class LocalizationManager {
         'backToEmployeeList': 'Back to Employee List',
         'confirmDelete': 'Are you sure you want to delete this employee?',
         
+        // Dialog translations
+        'deleteDialogTitle': 'Are you sure?',
+        'deleteDialogMessage': 'Selected Employee record of',
+        'deleteDialogWillBeDeleted': 'will be deleted',
+        'proceed': 'Proceed',
+        
+        // Save dialog translations
+        'saveDialogTitle': 'Save Employee',
+        'saveDialogMessage': 'Are you sure you want to save the employee record?',
+        'saveDialogNewMessage': 'Are you sure you want to create a new employee record?',
+        'saveDialogEditMessage': 'Are you sure you want to update the employee record?',
+        
         // Manage Employee translations
         'addNewEmployee': 'Add New Employee',
         'editEmployee': 'Edit Employee',
@@ -83,6 +95,18 @@ class LocalizationManager {
         'employeeNotFoundMessage': 'Aradığınız çalışan mevcut değil.',
         'backToEmployeeList': 'Çalışan Listesine Dön',
         'confirmDelete': 'Bu çalışanı silmek istediğinizden emin misiniz?',
+        
+        // Dialog translations
+        'deleteDialogTitle': 'Emin misiniz?',
+        'deleteDialogMessage': 'Seçilen Çalışan kaydı',
+        'deleteDialogWillBeDeleted': 'silinecektir',
+        'proceed': 'Devam Et',
+        
+        // Save dialog translations
+        'saveDialogTitle': 'Çalışan Kaydet',
+        'saveDialogMessage': 'Çalışan kaydını kaydetmek istediğinizden emin misiniz?',
+        'saveDialogNewMessage': 'Yeni çalışan kaydı oluşturmak istediğinizden emin misiniz?',
+        'saveDialogEditMessage': 'Çalışan kaydını güncellemek istediğinizden emin misiniz?',
         
         // Manage Employee translations
         'addNewEmployee': 'Yeni Çalışan Ekle',
