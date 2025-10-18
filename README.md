@@ -1,26 +1,106 @@
-# LitElement JavaScript starter
+# Employee Management System
 
-This project includes a sample component using LitElement with JavaScript.
+This project is an employee management system built with LitElement and JavaScript. It provides a comprehensive interface for managing employee data with features like viewing, adding, editing, and deleting employee records.
 
-This template is generated from the `lit-starter-js` package in [the main Lit
-repo](https://github.com/lit/lit). Issues and PRs for this template should be
-filed in that repo.
+## Components
 
-## About this release
+### EmployeeList (`employee-list.js`)
 
-This is a pre-release of Lit 3.0, the next major version of Lit.
+The EmployeeList component provides a comprehensive interface for displaying and managing employee data. It offers two view modes:
 
-Lit 3.0 has very few breaking changes from Lit 2.0:
+**Features:**
+- **Grid View**: Displays employees as cards with detailed information
+- **Table View**: Shows employees in a tabular format with sorting capabilities
+- **Pagination**: Handles large datasets with configurable items per page
+- **View Mode Toggle**: Switch between grid and table views
+- **Employee Actions**: Edit and delete functionality for each employee
+- **Responsive Design**: Optimized for both desktop and mobile devices
 
-- Drops support for IE11
-- Published as ES2021
-- Removes a couple of deprecated Lit 1.x APIs
+**Key Properties:**
+- `employees`: Array of employee objects
+- `currentPage`: Current pagination page number
+- `employeesPerPage`: Number of employees to display per page
+- `totalPages`: Total number of pages based on employee count
+- `viewMode`: Current view mode ('grid' or 'table')
+- `currentLanguage`: Current language setting for localization
 
-Lit 3.0 should require no changes to upgrade from Lit 2.0 for the vast majority of users. Once the full release is published, most apps and libraries will be able to extend their npm version ranges to include both 2.x and 3.x, like `"^2.7.0 || ^3.0.0"`.
+**Functionality:**
+- Displays employee information in both grid and table formats
+- Handles pagination with navigation controls
+- Provides edit and delete actions for each employee
+- Integrates with Redux store for state management
+- Supports internationalization with multiple languages
 
-Lit 2.x and 3.0 are _interoperable_: templates, base classes, directives, decorators, etc., from one version of Lit will work with those from another.
+### ManageEmployee (`manage-employee.js`)
 
-Please file any issues you find on our [issue tracker](https://github.com/lit/lit/issues).
+The ManageEmployee component handles both creating new employees and editing existing ones through a comprehensive form interface.
+
+**Features:**
+- **Unified Form**: Single component for both adding and editing employees
+- **Form Validation**: Real-time validation with error messages
+- **Date Handling**: Proper date formatting and validation
+- **Phone Number Validation**: Specialized input handling for phone numbers
+- **Department/Position Selection**: Dropdown menus for standardized values
+- **Navigation**: Integrated routing and navigation controls
+
+**Key Properties:**
+- `location`: Router location object
+- `employee`: Employee object being edited/created
+- `isNew`: Boolean indicating if creating a new employee
+- `formErrors`: Object containing validation error messages
+- `isFormValid`: Boolean indicating overall form validity
+- `currentLanguage`: Current language setting for localization
+
+**Form Fields:**
+- First Name (required, minimum 2 characters)
+- Last Name (required, minimum 2 characters)
+- Date of Employment (required, date picker)
+- Date of Birth (required, date picker)
+- Phone Number (required, formatted input with validation)
+- Email Address (required, email format validation)
+- Department (required, dropdown: Analytics/Tech)
+- Position (required, dropdown: Junior/Medior/Senior)
+
+**Validation Features:**
+- Real-time field validation
+- Email format validation
+- Phone number format validation
+- Required field validation
+- Form submission prevention when invalid
+
+**Navigation:**
+- Automatic navigation back to employee list after save/delete
+- Cancel functionality to return to list without saving
+- Integration with Vaadin Router for seamless navigation
+
+## Technical Architecture
+
+This project uses several key technologies and patterns:
+
+**State Management:**
+- Redux store for centralized state management
+- Actions for adding, updating, and deleting employees
+- Reactive updates across components
+
+**Routing:**
+- Vaadin Router for client-side navigation
+- Dynamic routing for employee detail pages
+- URL-based navigation between views
+
+**Localization:**
+- Multi-language support through localization manager
+- Dynamic language switching
+- Translated form labels and messages
+
+**Styling:**
+- CSS-in-JS using LitElement's static styles
+- Responsive design with mobile-first approach
+- Modern UI with hover effects and transitions
+
+**Form Handling:**
+- Real-time validation with immediate feedback
+- Custom input handlers for specialized fields (phone, dates)
+- Form state management with error tracking
 
 ## Setup
 

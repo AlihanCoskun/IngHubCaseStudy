@@ -527,3 +527,5 @@ class ManageEmployee extends LitElement {
 }
 
 customElements.define('manage-employee', ManageEmployee);
+
+export { ManageEmployee };
